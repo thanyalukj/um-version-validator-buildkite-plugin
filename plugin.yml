@@ -1,0 +1,11 @@
+name: um-version-validator
+version: 1.0.0
+title: Um Version Validator
+description: Validates the version of a UM
+author: https://github.com/fanduel
+requirements: []
+configuration:
+  properties:
+    pattern:
+      type: string
+  additionalProperties: false
