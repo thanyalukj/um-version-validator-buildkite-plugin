@@ -1,0 +1,10 @@
+services:
+  lint:
+    image: buildkite/plugin-linter
+    command: ['--id', 'ssh://git@github.com/thanyalukj/um-version-validator-buildkite-plugin']
+    volumes:
+      - ".:/plugin:ro"
+  tests:
+    image: buildkite/plugin-tester
+    volumes:
+      - ".:/plugin:ro"
