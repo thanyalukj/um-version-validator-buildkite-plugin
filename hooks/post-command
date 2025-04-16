@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-set -euo pipefail
 
 platform="$BUILDKITE_PLUGIN_UM_VERSION_VALIDATOR_PLATFORM"
 base_ref="$BUILDKITE_PLUGIN_UM_VERSION_VALIDATOR_BASE_BRANCH"
@@ -100,6 +99,9 @@ function getMaxVersion() {
             version_old=$(getVersionReact "origin/$base_ref" "react/library")
             version_new=$(getVersionReact "origin/$head_ref" "react/library") ;;
     esac
+
+    echo "version_old: $version_old (origin/$base_ref)"
+    echo "version_new: $version_new (origin/$head_ref)"
 
     m_skip_as_not_merging_into_main=false
     if [ "$base_ref" != "main" ]; then
