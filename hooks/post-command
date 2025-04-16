@@ -47,8 +47,8 @@ function getVersionReact() {
 }
 
 function checkSkipAlphaLabel() {
-    local pr_labels="$1"
-    local skip_label="skip-alpha"
+    local pr_labels=$1
+    local skip_label='skip-alpha'
 
     echo "check for skip-alpha label in $pr_labels"
 
@@ -62,7 +62,9 @@ function checkSkipAlphaLabel() {
 function getMaxVersion() {
     local version_old
     local version_new
-    local allow_skip_alpha_version = $(checkSkipAlphaLabel "$pr_labels")
+    local allow_skip_alpha_version
+    
+    allow_skip_alpha_version=$(checkSkipAlphaLabel "$pr_labels")
 
     echo "UM Version Vallidator"
     echo "Inputs:"
