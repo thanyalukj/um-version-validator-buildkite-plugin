@@ -1,12 +1,15 @@
 # UM Version Validator Buildkite Plugin
 
-Validates your publish version
+The UM Version Validator plugin provides the following functionalities:
 
-## Example
+- Validates the publish version against the version on the `base_branch`.
+- Allows developers to release a non-alpha version without requiring an intermediate alpha version if the pull request is tagged with the label `skip-alpha`.
+
+## Example Usage
 
 ```yml
 steps:
-  - label: Check Version
+  - label: Validate Version
     plugins:
         - ssh://git@github.com/thanyalukj/um-version-validator-buildkite-plugin.git#v1.0.1:
             platform: 'android-contract'
@@ -19,13 +22,25 @@ steps:
 
 ## Configuration
 
-### `pattern` (Required, string)
+### `platform` (Required, string)
 
-The file name pattern, for example `*.ts`. Supports any pattern supported by [find -name](http://man7.org/linux/man-pages/man1/find.1.html).
+Specifies the UM platform. Accepted values are: `android-contract`, `android-library`, `ios-contract`, `ios-library`, `react-contract`, and `react-library`.
 
-## Developing
+### `base_branch` (Required, string)
 
-To run the tests:
+Defines the base branch to merge into. Use `$BUILDKITE_PULL_REQUEST_BASE_BRANCH`.
+
+### `current_branch` (Required, string)
+
+Specifies the current branch. Use `$BUILDKITE_BRANCH`.
+
+### `pr_labels` (Required, string)
+
+Indicates the labels associated with the pull request. Use `$BUILDKITE_PULL_REQUEST_LABELS`.
+
+## Development
+
+To execute the tests, run the following command:
 
 ```shell
 docker-compose run --rm tests
