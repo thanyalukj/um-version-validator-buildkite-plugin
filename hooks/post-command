@@ -46,12 +46,23 @@ function getVersionReact() {
     fi
 }
 
+function checkSkipAlphaLabel() {
+    local pr_labels="$1"
+    local skip_label="skip-alpha"
+
+    echo "check for skip-alpha label in $pr_labels"
+
+    if [[ "$pr_labels" == *"$skip_label"* ]]; then
+        echo true
+    else
+        echo false
+    fi
+}
+
 function getMaxVersion() {
     local version_old
     local version_new
-    local allow_skip_alpha_version
-
-    allow_skip_alpha_version = $(checkSkipAlphaLabel "$pr_labels")
+    local allow_skip_alpha_version = $(checkSkipAlphaLabel "$pr_labels")
 
     echo "UM Version Vallidator"
     echo "Inputs:"
@@ -161,19 +172,6 @@ function getMaxVersion() {
     buildkite-agent annotate "($platform) - Test and publish required" --style 'info' --context "$platform-max-versions"
     buildkite-agent meta-data set 'skip-test' 'false'
     buildkite-agent meta-data set 'skip-publish' 'false'
-}
-
-function checkSkipAlphaLabel() {
-    local pr_labels="$1"
-    local skip_label="skip-alpha"
-
-    echo "check for skip-alpha label in $pr_labels"
-
-    if [[ "$pr_labels" == *"$skip_label"* ]]; then
-        echo true
-    else
-        echo false
-    fi
 }
 
 getMaxVersion
