@@ -64,13 +64,14 @@ function getMaxVersion() {
     allow_skip_alpha_version=$(checkSkipAlphaLabel "$pr_labels")
 
     echo "UM Version Vallidator"
+    echo "-------------------------------------"
     echo "Inputs:"
     echo "platform: $platform"
     echo "base_branch: $base_ref"
     echo "current_branch: $head_ref"
     echo "pr_labels: $pr_labels"
     echo "-------------------------------------"
-    echo "Checking for version code changes..."
+    echo "Checking for version..."
     echo "allow_skip_alpha_version: $allow_skip_alpha_version"
 
     case $platform in 
@@ -99,9 +100,6 @@ function getMaxVersion() {
             version_old=$(getVersionReact "origin/$base_ref" "react/library")
             version_new=$(getVersionReact "origin/$head_ref" "react/library") ;;
     esac
-
-    echo "version_old: $version_old (origin/$base_ref)"
-    echo "version_new: $version_new (origin/$head_ref)"
 
     m_skip_as_not_merging_into_main=false
     if [ "$base_ref" != "main" ]; then
@@ -134,13 +132,13 @@ function getMaxVersion() {
 
     if [[ "$allow_skip_alpha_version" == "true" ]]; then
         buildkite-agent annotate "($platform) - Allow a release without alpha version in between." --style 'info' --context "$platform-max-versions"
-        echo "ALLOW_SKIP_ALPHA_VERSION is set to true, skipping version check."
+        echo "There is a skip-alpha label, Allow releasing without an alpha in between."
     else 
         old_is_release=$(grep -ce "alpha" <<< "$version_old")
         new_is_release=$(grep -ce "alpha" <<< "$version_new")
         if [[ "$old_is_release" -eq 0 && "$new_is_release" -eq 0  ]]; then
             buildkite-agent annotate "($platform) - You cannot move from a release to another release, you must publish an alpha in between." --style 'error' --context "$platform-max-versions"
-            echo "ALLOW_SKIP_ALPHA_VERSION is set to false. You cannot move from a release to another release without an alpha in between."
+            echo "There is no skip-alpha label. You cannot move from a release to another release without an alpha in between."
             exit $E_VERSION_CANNOT_MOVE_FROM_RELEASE_TO_RELEASE
         fi
     fi
@@ -161,14 +159,17 @@ function getMaxVersion() {
         else version_max=$(sort -V versions.txt | tail -1)
     fi
 
-    echo "Attempting to find the maximum version between branches"
-    echo "$base_ref : $version_old"
-    echo "$head_ref : $version_new"
-    echo "max version : $version_max"
+    echo "Finding the maximum version between branches"
+    echo "branch $base_ref: $version_old"
+    echo "branch $head_ref: $version_new"
+    echo "maximum version: $version_max"
 
     if [ "$version_max" != "$version_new" ] ; then 
+        echo "Error: $version_new is smaller than $base_ref."
         buildkite-agent annotate "($platform) - Your VersionCode is smaller than origin/$base_ref" --style 'error' --context "$platform-max-versions"
         exit $E_VERSION_SMALLER_THAN_BEFORE
+    else
+        echo "Pass: $version_new is valid."
     fi
 
     buildkite-agent annotate "($platform) - Test and publish required" --style 'info' --context "$platform-max-versions"
