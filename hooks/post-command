@@ -1,12 +1,179 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -euo pipefail
 
-PATTERN="$BUILDKITE_PLUGIN_UM_VERSION_VALIDATOR_PATTERN"
+platform="$BUILDKITE_PLUGIN_UM_VERSION_VALIDATOR_PLATFORM"
+base_ref="$BUILDKITE_PLUGIN_UM_VERSION_VALIDATOR_BASE_BRANCH"
+head_ref="$BUILDKITE_PLUGIN_UM_VERSION_VALIDATOR_CURRENT_BRANCH"
+pr_labels="$BUILDKITE_PLUGIN_UM_VERSION_VALIDATOR_PR_LABELS"
 
-echo "--- :1234: Counting the number of files"
+E_VERSION_CODE_MISSING_ALPHA=101
+E_VERSION_SMALLER_THAN_BEFORE=102
+E_VERSION_NEEDS_INCREMENTED=103
+E_VERSION_ALREADY_RELEASED=104
+E_VERSION_NOT_FOUND=105
+E_VERSION_CANNOT_MOVE_FROM_RELEASE_TO_RELEASE=106
 
-COUNT=$(find . -name "$PATTERN" | wc -l)
+function getVersionAndroid() {
+    local ref=$1
+    local file_path=$2
 
-echo "Found ${COUNT} files matching ${PATTERN}"
+    if git cat-file -e "${ref}:${file_path}/build.gradle" 2>/dev/null; then
+        git show "${ref}:${file_path}/build.gradle" | grep versionName | tr \" "\n" | grep -e "\."
+    else
+        echo "UNDEFINED"
+    fi
+}
 
-buildkite-agent annotate "Found ${COUNT} files matching ${PATTERN}"
+function getVersionIos() {
+    local ref=$1
+    local podspec=$2
+    
+    if git cat-file -e "$ref:${podspec}" 2>/dev/null; then
+        git show "${ref}:${podspec}" | grep -m 1 s.version | tr \' "\n" | tail -2 | head -1
+    else
+        echo "UNDEFINED"
+    fi
+}
+
+function getVersionReact() {
+    local ref=$1
+    local file_path=$2
+    
+    if git cat-file -e "$ref:${file_path}/package.json" 2>/dev/null; then
+        git show "${ref}:${file_path}/package.json" | grep version | tr \" "\n" | grep -e "\."
+    else
+        echo "UNDEFINED"
+    fi
+}
+
+function getMaxVersion() {
+    local version_old
+    local version_new
+    local allow_skip_alpha_version
+
+    allow_skip_alpha_version = $(checkSkipAlphaLabel "$pr_labels")
+
+    echo "UM Version Vallidator"
+    echo "Inputs:"
+    echo "platform: $platform"
+    echo "base_branch: $base_ref"
+    echo "current_branch: $head_ref"
+    echo "pr_labels: $pr_labels"
+    echo "-------------------------------------"
+    echo "Checking for version code changes..."
+    echo "allow_skip_alpha_version: $allow_skip_alpha_version"
+
+    case $platform in 
+        "android-contract")
+            version_old=$(getVersionAndroid "origin/$base_ref" "android/contract")
+            version_new=$(getVersionAndroid "origin/$head_ref" "android/contract") ;;
+        
+        "android-library")
+            version_old=$(getVersionAndroid "origin/$base_ref" "android/library")
+            version_new=$(getVersionAndroid "origin/$head_ref" "android/library") ;;
+
+        "ios-contract")
+            version_old=$(getVersionIos "origin/$base_ref" "GeolocationSdkContract.podspec")
+            version_new=$(getVersionIos "origin/$head_ref" "GeolocationSdkContract.podspec") ;;
+
+        "ios-library")
+            version_old=$(getVersionIos "origin/$base_ref" "GeolocationSdk.podspec")
+            version_new=$(getVersionIos "origin/$head_ref" "GeolocationSdk.podspec") ;;
+
+        "react-contract")
+            version_old=$(getVersionReact "origin/$base_ref" "react/contract")
+            version_new=$(getVersionReact "origin/$head_ref" "react/contract") ;;
+        
+        
+        "react-library")
+            version_old=$(getVersionReact "origin/$base_ref" "react/library")
+            version_new=$(getVersionReact "origin/$head_ref" "react/library") ;;
+    esac
+
+    m_skip_as_not_merging_into_main=false
+    if [ "$base_ref" != "main" ]; then
+        if [ "$base_ref" = "main~1" ] ; then
+            m_skip_as_not_merging_into_main=false
+        else 
+            m_skip_as_not_merging_into_main=true
+        fi
+    fi
+
+    if [ "$m_skip_as_not_merging_into_main" = "true" ]; then
+        buildkite-agent annotate "($platform) - Not merging into main branch, no tests will run and no publish will happen." --style 'info' --context "$platform-max-versions"
+        exit 0
+    fi
+
+    alpha_zero=$(grep -ce "-alpha\.0" <<< "$version_new")
+    if test "$alpha_zero" -eq 1 ; then
+        buildkite-agent annotate "($platform) - x.x.x-alpha.0 version detected, assuming base project files and skipping test & publish steps" --style 'info' --context "$platform-max-versions"
+        exit 0
+    fi
+
+    if [ "$version_new" = "UNDEFINED" ] ; then
+        buildkite-agent annotate "($platform) - Could not find version code on $head_ref (new branch).  Have you deleted the identifying file for your platform?" --style 'error' --context "$platform-max-versions"
+        exit $E_VERSION_NOT_FOUND
+    elif [ "$version_old" = "$version_new" ] ; then
+        buildkite-agent annotate "($platform) - Test required as files changed, but no publish will happen as version code has not changed." --style 'info' --context "$platform-max-versions"
+        buildkite-agent meta-data set 'skip-test' 'false'
+        exit 0
+    fi
+
+    if [[ "$allow_skip_alpha_version" == "true" ]]; then
+        buildkite-agent annotate "($platform) - Allow a release without alpha version in between." --style 'info' --context "$platform-max-versions"
+        echo "ALLOW_SKIP_ALPHA_VERSION is set to true, skipping version check."
+    else 
+        old_is_release=$(grep -ce "alpha" <<< "$version_old")
+        new_is_release=$(grep -ce "alpha" <<< "$version_new")
+        if [[ "$old_is_release" -eq 0 && "$new_is_release" -eq 0  ]]; then
+            buildkite-agent annotate "($platform) - You cannot move from a release to another release, you must publish an alpha in between." --style 'error' --context "$platform-max-versions"
+            echo "ALLOW_SKIP_ALPHA_VERSION is set to false. You cannot move from a release to another release without an alpha in between."
+            exit $E_VERSION_CANNOT_MOVE_FROM_RELEASE_TO_RELEASE
+        fi
+    fi
+
+    # echo out variables to file 'versions.txt'
+    if [ "$version_old" = "UNDEFINED" ]
+        then echo "0.0" > versions.txt
+        else echo "$version_old" > versions.txt
+    fi
+    echo "$version_new" >> versions.txt
+    # if we can find our new within old
+    # ie, new -> 1.2.3              is contained within
+    #     old -> 1.2.3-alpha.x
+    if [ $(grep -ce "${version_new}" <<< "${version_old}") -gt 0 ] 
+        # grab first entry
+        then version_max=$(sort -V versions.txt | head -1)
+        # grab last entry
+        else version_max=$(sort -V versions.txt | tail -1)
+    fi
+
+    echo "Attempting to find the maximum version between branches"
+    echo "$base_ref : $version_old"
+    echo "$head_ref : $version_new"
+    echo "max version : $version_max"
+
+    if [ "$version_max" != "$version_new" ] ; then 
+        buildkite-agent annotate "($platform) - Your VersionCode is smaller than origin/$base_ref" --style 'error' --context "$platform-max-versions"
+        exit $E_VERSION_SMALLER_THAN_BEFORE
+    fi
+
+    buildkite-agent annotate "($platform) - Test and publish required" --style 'info' --context "$platform-max-versions"
+    buildkite-agent meta-data set 'skip-test' 'false'
+    buildkite-agent meta-data set 'skip-publish' 'false'
+}
+
+function checkSkipAlphaLabel() {
+    local pr_labels="$1"
+    local skip_label="skip-alpha"
+
+    echo "check for skip-alpha label in $pr_labels"
+
+    if [[ "$pr_labels" == *"$skip_label"* ]]; then
+        echo true
+    else
+        echo false
+    fi
+}
+
+getMaxVersion

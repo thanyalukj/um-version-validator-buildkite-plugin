@@ -1,11 +1,17 @@
 name: um-version-validator
-version: 1.0.0
+version: 1.0.1
 title: Um Version Validator
 description: Validates the version of a UM
 author: https://github.com/thanyalukj
 requirements: []
 configuration:
   properties:
-    pattern:
+    platform:
+      type: string
+    base_branch:
+      type: string
+    current_branch:
+      type: string
+    pr_labels:
       type: string
   additionalProperties: false
