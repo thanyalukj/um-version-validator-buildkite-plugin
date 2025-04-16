@@ -50,8 +50,6 @@ function checkSkipAlphaLabel() {
     local pr_labels=$1
     local skip_label='skip-alpha'
 
-    echo "check for skip-alpha label in $pr_labels"
-
     if [[ "$pr_labels" == *"$skip_label"* ]]; then
         echo true
     else

@@ -10,9 +10,9 @@ steps:
     plugins:
         - ssh://git@github.com/thanyalukj/um-version-validator-buildkite-plugin.git#v1.0.1:
             platform: 'android-contract'
-            base_branch: $$BUILDKITE_PULL_REQUEST_BASE_BRANCH
-            current_branch: $$BUILDKITE_BRANCH
-            pr_labels: $$BUILDKITE_PULL_REQUEST_LABELS
+            base_branch: $BUILDKITE_PULL_REQUEST_BASE_BRANCH
+            current_branch: $BUILDKITE_BRANCH
+            pr_labels: $BUILDKITE_PULL_REQUEST_LABELS
     agents:
       queue: build
 ```
