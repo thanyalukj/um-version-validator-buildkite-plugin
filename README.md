@@ -15,7 +15,6 @@ steps:
             platform: 'android-contract'
             base_branch: $BUILDKITE_PULL_REQUEST_BASE_BRANCH
             current_branch: $BUILDKITE_BRANCH
-            pr_labels: $BUILDKITE_PULL_REQUEST_LABELS
     agents:
       queue: build
 ```
@@ -33,10 +32,6 @@ Defines the base branch to merge into. Use `$BUILDKITE_PULL_REQUEST_BASE_BRANCH`
 ### `current_branch` (Required, string)
 
 Specifies the current branch. Use `$BUILDKITE_BRANCH`.
-
-### `pr_labels` (Required, string)
-
-Indicates the labels associated with the pull request. Use `$BUILDKITE_PULL_REQUEST_LABELS`.
 
 ## Development
 
