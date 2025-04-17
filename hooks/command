@@ -88,6 +88,12 @@ function get_max_version() {
     echo "Checking for version..."
     echo "allow_skip_alpha_version: $allow_skip_alpha_version"
 
+    ios_pod_spec_contract=$(ios_pod_spec "contract")
+    ios_pod_spec_library=$(ios_pod_spec "library")
+
+    echo "ios_pod_spec_contract: $ios_pod_spec_contract"
+    echo "ios_pod_spec_library: $ios_pod_spec_library"
+
     case $platform in 
         "android-contract")
             version_old=$(get_version_android "origin/$base_ref" "android/contract")
@@ -98,12 +104,12 @@ function get_max_version() {
             version_new=$(get_version_android "origin/$head_ref" "android/library") ;;
 
         "ios-contract")
-            version_old=$(get_version_ios "origin/$base_ref" "$(ios_pod_spec 'contract')")
-            version_new=$(get_version_ios "origin/$head_ref" "$(ios_pod_spec 'contract')") ;;
+            version_old=$(get_version_ios "origin/$base_ref" "$ios_pod_spec_contract")
+            version_new=$(get_version_ios "origin/$head_ref" "$ios_pod_spec_contract") ;;
 
         "ios-library")
-            version_old=$(get_version_ios "origin/$base_ref" "$(ios_pod_spec 'library')")
-            version_new=$(get_version_ios "origin/$head_ref" "$(ios_pod_spec 'library')") ;;
+            version_old=$(get_version_ios "origin/$base_ref" "$ios_pod_spec_library")
+            version_new=$(get_version_ios "origin/$head_ref" "$ios_pod_spec_library") ;;
 
         "react-contract")
             version_old=$(get_version_react "origin/$base_ref" "react/contract")
