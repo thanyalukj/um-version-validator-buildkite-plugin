@@ -12,7 +12,13 @@ E_VERSION_ALREADY_RELEASED=104
 E_VERSION_NOT_FOUND=105
 E_VERSION_CANNOT_MOVE_FROM_RELEASE_TO_RELEASE=106
 
-function getVersionAndroid() {
+# this is the "code under test"
+# it would normally be in another file
+format_date() {
+    date -r 222
+}
+
+function get_version_android() {
     local ref=$1
     local file_path=$2
 
@@ -23,7 +29,7 @@ function getVersionAndroid() {
     fi
 }
 
-function getVersionIos() {
+function get_version_ios() {
     local ref=$1
     local podspec=$2
     
@@ -34,7 +40,7 @@ function getVersionIos() {
     fi
 }
 
-function getVersionReact() {
+function get_version_react() {
     local ref=$1
     local file_path=$2
     
@@ -45,7 +51,7 @@ function getVersionReact() {
     fi
 }
 
-function checkSkipAlphaLabel() {
+function check_skip_alpha_label() {
     local pr_labels=$1
     local skip_label='skip-alpha'
 
@@ -56,12 +62,22 @@ function checkSkipAlphaLabel() {
     fi
 }
 
-function getMaxVersion() {
+function ios_pod_spec() {
+    local ios_platform=$1
+
+    if git cat-file -e "${ref}:/fanbrew.json" 2>/dev/null; then
+        git show "${ref}:fanbrew.json" | jq ".platforms.ios.${ios_platform}.podspec"
+    else
+        echo "UNDEFINED"
+    fi
+}
+
+function get_max_version() {
     local version_old
     local version_new
     local allow_skip_alpha_version
     
-    allow_skip_alpha_version=$(checkSkipAlphaLabel "$pr_labels")
+    allow_skip_alpha_version=$(check_skip_alpha_label "$pr_labels")
 
     echo "--- :mag: Checking UM Version Code"
     echo "platform: $platform"
@@ -74,33 +90,32 @@ function getMaxVersion() {
 
     case $platform in 
         "android-contract")
-            version_old=$(getVersionAndroid "origin/$base_ref" "android/contract")
-            version_new=$(getVersionAndroid "origin/$head_ref" "android/contract") ;;
+            version_old=$(get_version_android "origin/$base_ref" "android/contract")
+            version_new=$(get_version_android "origin/$head_ref" "android/contract") ;;
         
         "android-library")
-            version_old=$(getVersionAndroid "origin/$base_ref" "android/library")
-            version_new=$(getVersionAndroid "origin/$head_ref" "android/library") ;;
+            version_old=$(get_version_android "origin/$base_ref" "android/library")
+            version_new=$(get_version_android "origin/$head_ref" "android/library") ;;
 
         "ios-contract")
-            version_old=$(getVersionIos "origin/$base_ref" "GeolocationSdkContract.podspec")
-            version_new=$(getVersionIos "origin/$head_ref" "GeolocationSdkContract.podspec") ;;
+            version_old=$(get_version_ios "origin/$base_ref" "$(ios_pod_spec 'contract')")
+            version_new=$(get_version_ios "origin/$head_ref" "$(ios_pod_spec 'contract')") ;;
 
         "ios-library")
-            version_old=$(getVersionIos "origin/$base_ref" "GeolocationSdk.podspec")
-            version_new=$(getVersionIos "origin/$head_ref" "GeolocationSdk.podspec") ;;
+            version_old=$(get_version_ios "origin/$base_ref" "$(ios_pod_spec 'library')")
+            version_new=$(get_version_ios "origin/$head_ref" "$(ios_pod_spec 'library')") ;;
 
         "react-contract")
-            version_old=$(getVersionReact "origin/$base_ref" "react/contract")
-            version_new=$(getVersionReact "origin/$head_ref" "react/contract") ;;
-        
+            version_old=$(get_version_react "origin/$base_ref" "react/contract")
+            version_new=$(get_version_react "origin/$head_ref" "react/contract") ;;
         
         "react-library")
-            version_old=$(getVersionReact "origin/$base_ref" "react/library")
-            version_new=$(getVersionReact "origin/$head_ref" "react/library") ;;
+            version_old=$(get_version_react "origin/$base_ref" "react/library")
+            version_new=$(get_version_react "origin/$head_ref" "react/library") ;;
     esac
 
-    echo "base_branch:$base_ref version:$version_old"
-    echo "pr_branch:$head_ref version:$version_new"
+    echo "base_branch: $base_ref | version: $version_old"
+    echo "pr_branch: $head_ref | version: $version_new"
 
     m_skip_as_not_merging_into_main=false
     if [ "$base_ref" != "main" ]; then
@@ -175,4 +190,4 @@ function getMaxVersion() {
     buildkite-agent meta-data set 'skip-publish' 'false'
 }
 
-getMaxVersion
+get_max_version
