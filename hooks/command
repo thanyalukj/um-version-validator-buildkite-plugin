@@ -91,9 +91,6 @@ function get_max_version() {
     ios_pod_spec_contract=$(ios_pod_spec "contract")
     ios_pod_spec_library=$(ios_pod_spec "library")
 
-    echo "ios_pod_spec_contract: $ios_pod_spec_contract"
-    echo "ios_pod_spec_library: $ios_pod_spec_library"
-
     case $platform in 
         "android-contract")
             version_old=$(get_version_android "origin/$base_ref" "android/contract")
@@ -120,8 +117,8 @@ function get_max_version() {
             version_new=$(get_version_react "origin/$head_ref" "react/library") ;;
     esac
 
-    echo "base_branch: $base_ref | version: $version_old"
-    echo "pr_branch: $head_ref | version: $version_new"
+    echo "base_branch: $base_ref v: $version_old"
+    echo "pr_branch: $head_ref v: $version_new"
 
     m_skip_as_not_merging_into_main=false
     if [ "$base_ref" != "main" ]; then
