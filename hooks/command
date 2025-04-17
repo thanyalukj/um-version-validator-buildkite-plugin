@@ -66,7 +66,7 @@ function ios_pod_spec() {
     local ios_platform=$1
 
     if git cat-file -e "${ref}:fanbrew.json" 2>/dev/null; then
-        git show "${ref}:fanbrew.json" | jq ".platforms.ios.${ios_platform}.podspec"
+        git show "${ref}:fanbrew.json" | jq -r ".platforms.ios.${ios_platform}.podspec"
     else
         echo "UNDEFINED"
     fi
