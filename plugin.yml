@@ -12,6 +12,4 @@ configuration:
       type: string
     current_branch:
       type: string
-    pr_labels:
-      type: string
   additionalProperties: false

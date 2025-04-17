@@ -3,7 +3,7 @@
 platform="$BUILDKITE_PLUGIN_UM_VERSION_VALIDATOR_PLATFORM"
 base_ref="$BUILDKITE_PLUGIN_UM_VERSION_VALIDATOR_BASE_BRANCH"
 head_ref="$BUILDKITE_PLUGIN_UM_VERSION_VALIDATOR_CURRENT_BRANCH"
-pr_labels="$BUILDKITE_PLUGIN_UM_VERSION_VALIDATOR_PR_LABELS"
+pr_labels="$BUILDKITE_PULL_REQUEST_LABELS"
 
 E_VERSION_CODE_MISSING_ALPHA=101
 E_VERSION_SMALLER_THAN_BEFORE=102
@@ -68,7 +68,7 @@ function getMaxVersion() {
     echo "Inputs:"
     echo "platform: $platform"
     echo "base_branch: $base_ref"
-    echo "current_branch: $head_ref"
+    echo "pr_branch: $head_ref"
     echo "pr_labels: $pr_labels"
     echo "-------------------------------------"
     echo "Checking for version..."
@@ -100,6 +100,9 @@ function getMaxVersion() {
             version_old=$(getVersionReact "origin/$base_ref" "react/library")
             version_new=$(getVersionReact "origin/$head_ref" "react/library") ;;
     esac
+
+    echo "base_branch: $base_ref version: $version_old"
+    echo "pr_branch: $head_ref version: $version_new"
 
     m_skip_as_not_merging_into_main=false
     if [ "$base_ref" != "main" ]; then
@@ -159,17 +162,14 @@ function getMaxVersion() {
         else version_max=$(sort -V versions.txt | tail -1)
     fi
 
-    echo "Finding the maximum version between branches"
-    echo "branch $base_ref: $version_old"
-    echo "branch $head_ref: $version_new"
-    echo "maximum version: $version_max"
+    echo "Maximum version between branches: $version_max"
 
     if [ "$version_max" != "$version_new" ] ; then 
-        echo "Error: $version_new is smaller than $base_ref."
+        echo "Test failed: $version_new is smaller than $base_ref."
         buildkite-agent annotate "($platform) - Your VersionCode is smaller than origin/$base_ref" --style 'error' --context "$platform-max-versions"
         exit $E_VERSION_SMALLER_THAN_BEFORE
     else
-        echo "Pass: $version_new is valid."
+        echo "Test passed: $version_new is valid."        
     fi
 
     buildkite-agent annotate "($platform) - Test and publish required" --style 'info' --context "$platform-max-versions"
