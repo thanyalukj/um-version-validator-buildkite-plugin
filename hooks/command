@@ -65,7 +65,7 @@ function check_skip_alpha_label() {
 function ios_pod_spec() {
     local ios_platform=$1
 
-    if git cat-file -e "${ref}:/fanbrew.json" 2>/dev/null; then
+    if git cat-file -e "${ref}:fanbrew.json" 2>/dev/null; then
         git show "${ref}:fanbrew.json" | jq ".platforms.ios.${ios_platform}.podspec"
     else
         echo "UNDEFINED"
