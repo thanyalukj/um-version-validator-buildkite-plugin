@@ -63,7 +63,7 @@ function getMaxVersion() {
     
     allow_skip_alpha_version=$(checkSkipAlphaLabel "$pr_labels")
 
-    echo ":mag: UM Version Vallidator"
+    echo "--- :mag: Checking UM Version Code"
     echo "platform: $platform"
     echo "base_branch: $base_ref"
     echo "pr_branch: $head_ref"
@@ -163,11 +163,11 @@ function getMaxVersion() {
     echo "Maximum version between branches: $version_max"
 
     if [ "$version_max" != "$version_new" ] ; then 
-        echo ":no_entry: Test failed: $version_new is smaller than $base_ref."
+        echo "--- :no_entry: Test failed: $version_new is smaller than $base_ref."
         buildkite-agent annotate "($platform) - Your VersionCode is smaller than origin/$base_ref" --style 'error' --context "$platform-max-versions"
         exit $E_VERSION_SMALLER_THAN_BEFORE
     else
-        echo ":white_check_mark: Test passed: $version_new is valid."        
+        echo "--- :white_check_mark: Test passed: $version_new is valid."        
     fi
 
     buildkite-agent annotate "($platform) - Test and publish required" --style 'info' --context "$platform-max-versions"
