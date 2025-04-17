@@ -91,6 +91,9 @@ function get_max_version() {
     ios_pod_spec_contract=$(ios_pod_spec "contract")
     ios_pod_spec_library=$(ios_pod_spec "library")
 
+    echo "ios_pod_spec_contract: $ios_pod_spec_contract"
+    echo "ios_pod_spec_library: $ios_pod_spec_library"
+
     case $platform in 
         "android-contract")
             version_old=$(get_version_android "origin/$base_ref" "android/contract")
