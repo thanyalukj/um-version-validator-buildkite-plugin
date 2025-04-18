@@ -66,7 +66,7 @@ function ios_pod_spec() {
     local ios_platform=$1
 
     if git cat-file -e "${ref}:fanbrew.json" 2>/dev/null; then
-        git show "${ref}:fanbrew.json" | jq -r ".platforms.ios.${ios_platform}.podspec"
+        git show "${ref}:fanbrew.json" | jq -r "(.platforms.ios.${ios_platform}.podspec)?"
     else
         echo "UNDEFINED"
     fi
@@ -84,7 +84,6 @@ function get_max_version() {
     echo "base_branch: $base_ref"
     echo "pr_branch: $head_ref"
     echo "pr_labels: $pr_labels"
-    echo "-------------------------------------"
     echo "Checking for version..."
     echo "allow_skip_alpha_version: $allow_skip_alpha_version"
 
@@ -120,6 +119,7 @@ function get_max_version() {
             version_new=$(get_version_react "origin/$head_ref" "react/library") ;;
     esac
 
+    echo "----------------------------------"
     echo "base_branch: $base_ref v: $version_old"
     echo "pr_branch: $head_ref v: $version_new"
 
