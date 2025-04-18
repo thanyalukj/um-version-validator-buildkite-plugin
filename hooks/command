@@ -12,12 +12,6 @@ E_VERSION_ALREADY_RELEASED=104
 E_VERSION_NOT_FOUND=105
 E_VERSION_CANNOT_MOVE_FROM_RELEASE_TO_RELEASE=106
 
-# this is the "code under test"
-# it would normally be in another file
-format_date() {
-    date -r 222
-}
-
 function get_version_android() {
     local ref=$1
     local file_path=$2
