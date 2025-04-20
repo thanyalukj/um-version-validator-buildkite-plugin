@@ -77,8 +77,9 @@ function get_max_version() {
 
     echo "--- :mag: Checking UM Version Code"
     echo "Platform: $platform"
-    echo "Base Branch: $base_ref, PR Branch: $head_ref"
-    echo "PR Labels: $pr_labels , Skip Alpha: $allow_skip_alpha_version"
+    echo "Base Branch: $base_ref"
+    echo "PR Branch: $head_ref"
+    echo "Allow Skip Alpha: $allow_skip_alpha_version (PR Labels: $pr_labels)"
     echo "iOS Contract: $ios_pod_spec_contract"
     echo "iOS Library: $ios_pod_spec_library"
 
