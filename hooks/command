@@ -72,18 +72,15 @@ function get_max_version() {
     local allow_skip_alpha_version
     
     allow_skip_alpha_version=$(check_skip_alpha_label "$pr_labels")
+    ios_pod_spec_contract=$(ios_pod_spec "contract")
+    ios_pod_spec_library=$(ios_pod_spec "library")
 
     echo "--- :mag: Checking UM Version Code"
     echo "platform: $platform"
     echo "base_branch: $base_ref"
     echo "pr_branch: $head_ref"
     echo "pr_labels: $pr_labels"
-    echo "Checking for version..."
     echo "allow_skip_alpha_version: $allow_skip_alpha_version"
-
-    ios_pod_spec_contract=$(ios_pod_spec "contract")
-    ios_pod_spec_library=$(ios_pod_spec "library")
-
     echo "ios_pod_spec_contract: $ios_pod_spec_contract"
     echo "ios_pod_spec_library: $ios_pod_spec_library"
 
@@ -139,22 +136,21 @@ function get_max_version() {
 
     if [ "$version_new" = "UNDEFINED" ] ; then
         buildkite-agent annotate "($platform) - Could not find version code on $head_ref (new branch).  Have you deleted the identifying file for your platform?" --style 'error' --context "$platform-max-versions"
+        echo "--- :no_entry: Test failed: version not found on $head_ref."
         exit $E_VERSION_NOT_FOUND
     elif [ "$version_old" = "$version_new" ] ; then
         buildkite-agent annotate "($platform) - Test required as files changed, but no publish will happen as version code has not changed." --style 'info' --context "$platform-max-versions"
+        echo "--- :left_right_arrow: version not change. No publish will happen."
         buildkite-agent meta-data set 'skip-test' 'false'
         exit 0
     fi
 
-    if [[ "$allow_skip_alpha_version" == "true" ]]; then
-        buildkite-agent annotate "($platform) - Allow a release without alpha version in between." --style 'info' --context "$platform-max-versions"
-        echo "--- :white_check_mark: Allow to release without an alpha in between."
-    else 
+    if [[ ! "$allow_skip_alpha_version" == "true" ]]; then
         old_is_release=$(grep -ce "alpha" <<< "$version_old")
         new_is_release=$(grep -ce "alpha" <<< "$version_new")
         if [[ "$old_is_release" -eq 0 && "$new_is_release" -eq 0  ]]; then
             buildkite-agent annotate "($platform) - You cannot move from a release to another release, you must publish an alpha in between." --style 'error' --context "$platform-max-versions"
-            echo "--- :warning: You must publish an alpha in between."
+            echo "--- :no_entry: you must publish an alpha in between."
             exit $E_VERSION_CANNOT_MOVE_FROM_RELEASE_TO_RELEASE
         fi
     fi
@@ -178,11 +174,11 @@ function get_max_version() {
     echo "Maximum version between branches: $version_max"
 
     if [ "$version_max" != "$version_new" ] ; then 
-        echo "--- :no_entry: Test failed: $version_new is smaller than $base_ref."
+        echo "--- :no_entry: Test failed: version $version_new is smaller than $base_ref."
         buildkite-agent annotate "($platform) - Your VersionCode is smaller than origin/$base_ref" --style 'error' --context "$platform-max-versions"
         exit $E_VERSION_SMALLER_THAN_BEFORE
     else
-        echo "--- :white_check_mark: Test passed: $version_new is valid."        
+        echo "--- :white_check_mark: Test passed: version $version_new is valid."        
     fi
 
     buildkite-agent annotate "($platform) - Test and publish required" --style 'info' --context "$platform-max-versions"
