@@ -111,8 +111,8 @@ function validate_publish_version() {
     esac
 
     echo "----------------------------------"
-    echo "Base Branch Version on $base_ref: $version_old"
-    echo "PR Branch Version on $head_ref: $version_new"
+    echo "$base_ref: $version_old"
+    echo "$head_ref: $version_new"
 
     m_skip_as_not_merging_into_main=false
     if [ "$base_ref" != "main" ]; then
