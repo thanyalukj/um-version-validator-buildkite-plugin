@@ -11,7 +11,7 @@ The UM Version Validator plugin provides the following functionalities:
 steps:
   - label: Validate Version
     plugins:
-        - ssh://git@github.com/thanyalukj/um-version-validator-buildkite-plugin.git#v1.1.4:
+        - ssh://git@github.com/thanyalukj/um-version-validator-buildkite-plugin.git#v1.1.14:
             platform: 'android-contract'
             base_branch: $BUILDKITE_PULL_REQUEST_BASE_BRANCH
             current_branch: $BUILDKITE_BRANCH
