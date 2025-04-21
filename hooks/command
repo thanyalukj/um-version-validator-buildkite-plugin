@@ -110,8 +110,8 @@ function get_max_version() {
     esac
 
     echo "----------------------------------"
-    echo "Base Branch: $base_ref v: $version_old"
-    echo "PR Branch: $head_ref v: $version_new"
+    echo "Base Branch Version: $version_old on $base_ref"
+    echo "PR Branch Version: $version_new on $head_ref"
 
     m_skip_as_not_merging_into_main=false
     if [ "$base_ref" != "main" ]; then
