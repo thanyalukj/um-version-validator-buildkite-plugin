@@ -37,9 +37,12 @@ function check_skip_alpha_label() {
     local pr_labels=$1
     local skip_label='skip-alpha'
 
-    if [[ "$BUILDKITE_PULL_REQUEST" == "false"]]; then
+    if [[ $BUILDKITE_PULL_REQUEST == "false" ]]; then
         echo true
-    elif [[ "$pr_labels" == *"$skip_label"* ]]; then
+        return
+    fi
+    
+    if [[ "$pr_labels" == *"$skip_label"* ]]; then
         echo true
     else
         echo false
