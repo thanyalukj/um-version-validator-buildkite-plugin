@@ -1,5 +1,17 @@
 #!/usr/bin/env bash
 
+DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+## Source functions.bash based on environment
+## local environment = BUILDKITE_BUILD_ID is not set
+## Buildkite environment = BUILDKITE_BUILD_ID is set
+BUILD_ID=${BUILDKITE_BUILD_ID:-""}
+if [ ! $BUILD_ID == "" ]; then
+  # shellcheck source=lib/functions.bash
+  # shellcheck disable=SC1091
+  source "$DIR/../lib/functions.bash"
+fi
+
 platform="$BUILDKITE_PLUGIN_UM_VERSION_VALIDATOR_PLATFORM"
 base_ref="$BUILDKITE_PLUGIN_UM_VERSION_VALIDATOR_BASE_BRANCH"
 head_ref="$BUILDKITE_PLUGIN_UM_VERSION_VALIDATOR_CURRENT_BRANCH"
@@ -11,61 +23,6 @@ E_VERSION_NEEDS_INCREMENTED=103
 E_VERSION_ALREADY_RELEASED=104
 E_VERSION_NOT_FOUND=105
 E_VERSION_CANNOT_MOVE_FROM_RELEASE_TO_RELEASE=106
-
-function get_version_android() {
-    local ref=$1
-    local file_path=$2
-
-    if git cat-file -e "${ref}:${file_path}/build.gradle" 2>/dev/null; then
-        git show "${ref}:${file_path}/build.gradle" | grep versionName | tr \" "\n" | grep -e "\."
-    else
-        echo "UNDEFINED"
-    fi
-}
-
-function get_version_ios() {
-    local ref=$1
-    local podspec=$2
-    
-    if git cat-file -e "$ref:${podspec}" 2>/dev/null; then
-        git show "${ref}:${podspec}" | grep -m 1 s.version | tr \' "\n" | tail -2 | head -1
-    else
-        echo "UNDEFINED"
-    fi
-}
-
-function get_version_react() {
-    local ref=$1
-    local file_path=$2
-    
-    if git cat-file -e "$ref:${file_path}/package.json" 2>/dev/null; then
-        git show "${ref}:${file_path}/package.json" | grep version | tr \" "\n" | grep -e "\."
-    else
-        echo "UNDEFINED"
-    fi
-}
-
-function check_skip_alpha_label() {
-    local pr_labels=$1
-    local skip_label='skip-alpha'
-
-    if [[ "$pr_labels" == *"$skip_label"* ]]; then
-        echo true
-    else
-        echo false
-    fi
-}
-
-function ios_pod_spec() {
-    local ref=$1
-    local ios_platform=$2
-
-    if git cat-file -e "${ref}:fanbrew.json" 2>/dev/null; then
-        git show "${ref}:fanbrew.json" | jq -r "(.platforms.ios.${ios_platform}.podspec)?"
-    else
-        echo "UNDEFINED"
-    fi
-}
 
 function validate_publish_version() {
     local version_old
@@ -139,7 +96,7 @@ function validate_publish_version() {
         echo "--- :no_entry: Version not found on $head_ref."
         exit $E_VERSION_NOT_FOUND
     elif [ "$version_old" = "$version_new" ] ; then
-        buildkite-agent annotate "($platform) - No version change. Tests required, no publish." --style 'info' --context "$platform-max-versions"
+        buildkite-agent annotate "($platform) - No version change. Tests required. No publish." --style 'info' --context "$platform-max-versions"
         echo "--- :left_right_arrow: No version change. Tests required, no publish."
         buildkite-agent meta-data set 'skip-test' 'false'
         exit 0
