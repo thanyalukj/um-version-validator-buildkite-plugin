@@ -1,9 +1,9 @@
 # UM Version Validator Buildkite Plugin
 
-The UM Version Validator plugin provides the following functionalities:
+The UM Version Validator plugin provides the following functionalities to support Building Unified Module:
 
-- Validates the publish version against the version on the `base_branch`.
-- Allows developers to release a non-alpha version without requiring an intermediate alpha version if the pull request is tagged with the label `skip-alpha`.
+- It validates the publish version against the version on the `base_branch`.
+- It allows developers to release a non-alpha version without requiring an intermediate alpha version if the pull request is tagged with the label `skip-alpha`.
 
 ## Example Usage
 
